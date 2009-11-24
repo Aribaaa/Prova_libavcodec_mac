@@ -224,7 +224,7 @@ int main (int argc, char *argv[]) {
         screen = SDL_SetVideoMode(pCodecCtx->width, pCodecCtx->height, 24, 0);
     #endif
     if(!screen) {
-      fprintf(stderr, "SDL: could not set video mode - exiting\n");
+      cout << "SDL: could not set video mode - exiting\n";
       exit(1);
     }
 
