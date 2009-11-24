@@ -1,6 +1,7 @@
 #include <iostream>
 #include <SDL/SDL.h>
 #include <SDL/SDL_thread.h>
+#include <SDL/SDL_main.h>
 extern "C" {
 #include <libavcodec/avcodec.h>
 }
@@ -197,6 +198,8 @@ int main (int argc, char *argv[]) {
     /*
     But first we have to start by seeing how to use the SDL Library. First we have to include the libraries and initalize SDL
     */
+
+
 
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
       fprintf(stderr, "Could not initialize SDL - %s\n", SDL_GetError());

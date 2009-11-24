@@ -1,12 +1,11 @@
 SOURCES += main.cpp
-LIBS += -L/Users/shaolin/Desktop/ffmpeg-0.5/libavcodec \
+LIBS += -L/opt/local/lib/ \
     -lavcodec \
-    -L/Users/shaolin/Desktop/ffmpeg-0.5/libavformat \
     -lavformat \
-    -L/Users/shaolin/Desktop/ffmpeg-0.5/libavutil \
     -lavutil \
+    -lSDL -D_GNU_SOURCE=1 -D_THREAD_SAFE \
     -lm \
     -lz
-INCLUDEPATH += /Users/shaolin/Desktop/ffmpeg-0.5/
+INCLUDEPATH += /opt/local/include/
 QMAKE_CC = /usr/bin/gcc-4.2
-CONFIG = ppc -app_bundle
+CONFIG = +ppc -app_bundle
