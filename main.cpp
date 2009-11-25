@@ -2,6 +2,7 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_thread.h>
 #include <SDL/SDL_main.h>
+#include <libswscale/swscale.h>
 extern "C" {
 #include <libavcodec/avcodec.h>
 }
@@ -126,21 +127,21 @@ int main (int argc, char *argv[]) {
     */
 
     // Allocate an AVFrame structure
-    AVFrame *pFrameRGB=avcodec_alloc_frame();
+    /*AVFrame *pFrameRGB=avcodec_alloc_frame();
     if(pFrameRGB==NULL){
         return -1;
-    }
+    }*/
 
     /*
     Even though we've allocated the frame, we still need a place to put the raw data when we convert it. We use avpicture_get_size to get the size we need,
     and allocate the space manually:
     */
 
-    uint8_t *buffer;
+    /*uint8_t *buffer;
     int numBytes;
     // Determine required buffer size and allocate buffer
     numBytes=avpicture_get_size(PIX_FMT_RGB24, pCodecCtx->width, pCodecCtx->height);
-    buffer=(uint8_t *)av_malloc(numBytes*sizeof(uint8_t));
+    buffer=(uint8_t *)av_malloc(numBytes*sizeof(uint8_t));*/
 
     /*
     av_malloc is ffmpeg's malloc that is just a simple wrapper around malloc that makes sure the memory addresses are aligned and such. It will not protect you from memory leaks,
@@ -153,16 +154,16 @@ int main (int argc, char *argv[]) {
     // Assign appropriate parts of buffer to image planes in pFrameRGB
     // Note that pFrameRGB is an AVFrame, but AVFrame is a superset
     // of AVPicture
-    avpicture_fill((AVPicture *)pFrameRGB, buffer, PIX_FMT_RGB24, pCodecCtx->width, pCodecCtx->height);
+    //avpicture_fill((AVPicture *)pFrameRGB, buffer, PIX_FMT_RGB24, pCodecCtx->width, pCodecCtx->height);
 
     /*
     Finally! Now we're ready to read from the stream!
 
     READING THE DATA
-    What we're going to do is read through the entire video stream by reading in the packet, decoding it into our frame, and once our frame is complete, we will convert and save it.
+    What we're going to do is read through the entire video stream by reading in the packet, decoding it into our frame, and once our frame is complete, we will convert it.
     */
-// DA LEVARE
-   /* int frameFinished;
+
+    /*int frameFinished;
     AVPacket packet;
 
     i=0;
@@ -172,6 +173,8 @@ int main (int argc, char *argv[]) {
             // Decode video frame
         avcodec_decode_video(pCodecCtx, pFrame, &frameFinished,
                              packet.data, packet.size);
+
+        // DA LEVARE
 
         // Did we get a video frame?
         if(frameFinished) {
@@ -199,11 +202,10 @@ int main (int argc, char *argv[]) {
     But first we have to start by seeing how to use the SDL Library. First we have to include the libraries and initalize SDL
     */
 
-
-
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
-      fprintf(stderr, "Could not initialize SDL - %s\n", SDL_GetError());
-      exit(1);
+        //fprintf(stderr, "Could not initialize SDL - %s\n", SDL_GetError());
+        cout << "Could not initialize SDL - %s\n" + *SDL_GetError();
+        exit(1);
     }
 
     /*
@@ -218,14 +220,14 @@ int main (int argc, char *argv[]) {
 
     SDL_Surface *screen;
 
-    #ifndef __DARWIN__
+#ifndef __DARWIN__
     screen = SDL_SetVideoMode(pCodecCtx->width, pCodecCtx->height, 0, 0);
-    #else
-        screen = SDL_SetVideoMode(pCodecCtx->width, pCodecCtx->height, 24, 0);
-    #endif
+#else
+    screen = SDL_SetVideoMode(pCodecCtx->width, pCodecCtx->height, 24, 0);
+#endif
     if(!screen) {
-      cout << "SDL: could not set video mode - exiting\n";
-      exit(1);
+        cout << "SDL: could not set video mode - exiting\n";
+        exit(1);
     }
 
     /*
@@ -237,13 +239,98 @@ int main (int argc, char *argv[]) {
     bmp = SDL_CreateYUVOverlay(pCodecCtx->width, pCodecCtx->height,
                                SDL_YV12_OVERLAY, screen);
 
+    /*
+    As we said before, we are using YV12 to display the image.
+
+    DISPLAYING THE IMAGE
+
+    Well that was simple enough! Now we just need to display the image. Let's go all the way down to where we had our finished frame.
+    To display the image, we're going to make an AVPicture struct and set its data pointers and linesize to our YUV overlay
+    What we're going to do is read through the entire video stream by reading in the packet, decoding it into our frame, and once our frame is complete, we will convert it.
+    */
+
+    int frameFinished;
+    AVPacket packet;
+    SDL_Rect rect;
+
+    i=0;
+    while(av_read_frame(pFormatCtx, &packet)>=0) {
+        // Is this a packet from the video stream?
+        if(packet.stream_index==videoStream) {
+            // Decode video frame
+            avcodec_decode_video(pCodecCtx, pFrame, &frameFinished, packet.data, packet.size);
+
+            if(frameFinished) {
+                SDL_LockYUVOverlay(bmp);
+
+                AVPicture pict;
+                pict.data[0] = bmp->pixels[0];
+                pict.data[1] = bmp->pixels[2];
+                pict.data[2] = bmp->pixels[1];
+
+                pict.linesize[0] = bmp->pitches[0];
+                pict.linesize[1] = bmp->pitches[2];
+                pict.linesize[2] = bmp->pitches[1];
+
+                // Convert the image into YUV format that SDL uses
+                img_convert(&pict, PIX_FMT_YUV420P, (AVPicture *)pFrame, pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height);
+
+                SDL_UnlockYUVOverlay(bmp);
+
+                rect.x = 0;
+                rect.y = 0;
+                rect.w = pCodecCtx->width;
+                rect.h = pCodecCtx->height;
+                SDL_DisplayYUVOverlay(bmp, &rect);
+
+            }
 
 
+        }
 
+    }
 
+    /*
+    First, we lock the overlay because we are going to be writing to it. This is a good habit to get into so you don't have problems later.
+    The AVPicture struct, as shown before, has a data pointer that is an array of 4 pointers. Since we are dealing with YUV420P here, we only have 3 channels,
+    and therefore only 3 sets of data. Other formats might have a fourth pointer for an alpha channel or something. linesize is what it sounds like.
+    The analogous structures in our YUV overlay are the pixels and pitches variables. ("pitches" is the term SDL uses to refer to the width of a given line of data.)
+    So what we do is point the three arrays of pict.data at our overlay, so when we write to pict, we're actually writing into our overlay,
+    which of course already has the necessary space allocated. Similarly, we get the linesize information directly from our overlay.
+    We change the conversion format to PIX_FMT_YUV420P, and we use img_convert just like before.
 
+    DRAWING THE IMAGE
 
+    But we still need to tell SDL to actually show the data we've given it. We also pass this function a rectangle that says where the movie should go
+    and what width and height it should be scaled to. This way, SDL does the scaling for us, and it can be assisted by your graphics processor for faster scaling
+    Now our video is displayed!
 
+    Let's take this time to show you another feature of SDL: its event system. SDL is set up so that when you type, or move the mouse in the SDL application,
+    or send it a signal, it generates an event. Your program then checks for these events if it wants to handle user input. Your program can also make up events
+    to send the SDL event system. This is especially useful when multithread programming with SDL, which we'll see in Tutorial 4. In our program,
+    we're going to poll for events right after we finish processing a packet. For now, we're just going to handle the SDL_QUIT event so we can exit
+    */
+
+    SDL_Event event;
+
+    av_free_packet(&packet);
+    SDL_PollEvent(&event);
+    switch(event.type) {
+    case SDL_QUIT:
+        SDL_Quit();
+        exit(0);
+        break;
+    default:
+        break;
+    }
+
+    // Close the codec
+    avcodec_close(pCodecCtx);
+
+    // Close the video file
+    av_close_input_file(pFormatCtx);
+
+    return 0;
 
 
 
