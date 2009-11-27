@@ -4,6 +4,7 @@ LIBS += -L/opt/local/lib/ \
     -lavformat \
     -lavutil \
     -lSDL \
+    -lswscale \
     -lm \
     -lz
 INCLUDEPATH += /opt/local/include/
