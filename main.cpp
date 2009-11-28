@@ -1,15 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
-#include <SDL/SDL.h>
-#include <SDL/SDL_thread.h>
-#include <SDL/SDL_main.h>
-#include <libswscale/swscale.h>
 extern "C" {
 #include <libavutil/avutil.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 }
+#include <SDL/SDL_main.h>
+#include <SDL/SDL.h>
+#include <SDL/SDL_thread.h>
+#include <libswscale/swscale.h>
+//#include <stdio.h>
+//#include <stdlib.h>
+#include <iostream>
 
 using namespace std;
 
@@ -290,7 +290,7 @@ int main (int argc, char *argv[]) {
     }
 
     if(videoStream==-1){
-        cout << "Didn't find a video stream\n";
+        cerr << "Didn't find a video stream\n";
         return -1;
     }
     else{
@@ -299,7 +299,7 @@ int main (int argc, char *argv[]) {
     }
 
     if(audioStream==-1){
-        cout << "Didn't find an audio stream\n";
+        cerr << "Didn't find an audio stream\n";
         return -1;
     }
     else{

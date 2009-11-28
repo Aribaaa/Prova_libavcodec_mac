@@ -1,8 +1,8 @@
 SOURCES += main.cpp
 LIBS += -L/opt/local/lib/ \
+    -lavutil \
     -lavcodec \
     -lavformat \
-    -lavutil \
     -lSDL \
     -lswscale \
     -lm \
