@@ -1,18 +1,18 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 #include <SDL/SDL.h>
 #include <SDL/SDL_thread.h>
 #include <SDL/SDL_main.h>
 #include <libswscale/swscale.h>
 extern "C" {
+#include <libavutil/avutil.h>
 #include <libavcodec/avcodec.h>
-}
-extern "C" {
 #include <libavformat/avformat.h>
 }
-extern "C" {
-#include <libavutil/avutil.h>
-}
+
 using namespace std;
+
 #define SDL_AUDIO_BUFFER_SIZE 1024;
 
 typedef struct PacketQueue {
@@ -189,8 +189,7 @@ void audio_callback(void *userdata, Uint8 *stream, int len) {
     while(len > 0) {
         if(audio_buf_index >= audio_buf_size) {
             /* We have already sent all our data; get more */
-            audio_size = audio_decode_frame(aCodecCtx, audio_buf,
-                                            sizeof(audio_buf));
+            //audio_size = audio_decode_frame(aCodecCtx, audio_buf, sizeof(audio_buf));
             if(audio_size < 0) {
                 /* If error, output silence */
                 audio_buf_size = 1024;
@@ -364,7 +363,7 @@ int main (int argc, char *argv[]) {
 
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
         //fprintf(stderr, "Could not initialize SDL - %s\n", SDL_GetError());
-        cout << "Could not initialize SDL - %s\n" + *SDL_GetError();
+        cerr << "Could not initialize SDL - %s\n" + *SDL_GetError();
         exit(1);
     }
 
@@ -386,7 +385,7 @@ int main (int argc, char *argv[]) {
     wanted_spec.userdata = aCodecCtx;
 
     if(SDL_OpenAudio(&wanted_spec, &spec) < 0) {
-        fprintf(stderr, "SDL_OpenAudio: %s\n", SDL_GetError());
+        //fprintf(stderr, "SDL_OpenAudio: %s\n", SDL_GetError());
         cerr << "SDL_OpenAudio: \n" + *SDL_GetError();
         return -1;
     }
@@ -412,7 +411,7 @@ int main (int argc, char *argv[]) {
     screen = SDL_SetVideoMode(pCodecCtx->width, pCodecCtx->height, 24, 0);
 #endif
     if(!screen) {
-        cout << "SDL: could not set video mode - exiting\n";
+        cerr << "SDL: could not set video mode - exiting\n";
         exit(1);
     }
 
